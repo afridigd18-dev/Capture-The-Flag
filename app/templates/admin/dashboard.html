@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — HackArena CTF{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <h1 class="text-3xl font-bold text-neon-magenta glitch" data-text="ADMIN PANEL">ADMIN PANEL</h1>
+    <div class="flex gap-3">
+        <a href="{{ url_for('admin.challenge_new') }}" class="btn-neon px-4 py-2 text-xs rounded">+ New Challenge</a>
+        <a href="{{ url_for('admin.users_list') }}" class="btn-cyan px-4 py-2 text-xs rounded">Manage Users</a>
+        <a href="{{ url_for('admin.audit_logs') }}"
+            class="text-gray-500 hover:text-matrix px-4 py-2 text-xs border border-gray-800 rounded transition-colors">Audit
+            Logs</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="terminal-card p-5 text-center">
+        <div class="text-3xl font-bold text-neon-cyan">{{ stats.total_users }}</div>
+        <div class="text-xs text-gray-600 uppercase tracking-widest mt-1">Total Users</div>
+    </div>
+    <div class="terminal-card p-5 text-center">
+        <div class="text-3xl font-bold text-matrix">{{ stats.total_challenges }}</div>
+        <div class="text-xs text-gray-600 uppercase tracking-widest mt-1">Challenges</div>
+    </div>
+    <div class="terminal-card p-5 text-center">
+        <div class="text-3xl font-bold text-neon-yellow">{{ stats.total_submissions }}</div>
+        <div class="text-xs text-gray-600 uppercase tracking-widest mt-1">Submissions</div>
+    </div>
+    <div class="terminal-card p-5 text-center">
+        <div class="text-3xl font-bold text-green-400">{{ stats.correct_submissions }}</div>
+        <div class="text-xs text-gray-600 uppercase tracking-widest mt-1">Correct Flags</div>
+    </div>
+</div>
+
+<!-- Recent Audit Log -->
+<div class="terminal-card p-5 rounded-lg">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xs text-neon-cyan uppercase tracking-widest">// Recent Activity</h2>
+        <a href="{{ url_for('admin.audit_logs') }}"
+            class="text-xs text-gray-600 hover:text-matrix transition-colors">View all →</a>
+    </div>
+    <table class="ctf-table text-xs">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Action</th>
+                <th>User</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in recent_logs %}
+            <tr>
+                <td class="text-gray-700 whitespace-nowrap">{{ log.created_at.strftime('%H:%M:%S') }}</td>
+                <td>
+                    <span class="{% if 'correct' in log.action %}text-matrix
+                        {% elif 'fail' in log.action or 'wrong' in log.action %}text-red-400
+                        {% elif 'ban' in log.action %}text-neon-magenta
+                        {% else %}text-gray-400{% endif %}">
+                        {{ log.action }}
+                    </span>
+                </td>
+                <td>
+                    {% if log.user %}
+                    <a href="{{ url_for('profile.view_profile', username=log.user.username) }}"
+                        class="text-neon-cyan hover:text-matrix transition-colors">
+                        {{ log.user.username }}
+                    </a>
+                    {% else %}
+                    <span class="text-gray-600">—</span>
+                    {% endif %}
+                </td>
+                <td class="text-gray-700">{{ log.ip_address or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-gray-600 text-center py-6">No activity yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

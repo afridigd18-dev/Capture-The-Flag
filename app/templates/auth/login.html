@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Login — HackArena CTF{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center">
+    <div class="w-full max-w-md">
+
+        <!-- Terminal header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-matrix glitch typing-cursor" data-text="ACCESS TERMINAL">
+                ACCESS TERMINAL
+            </h1>
+            <p class="text-gray-600 text-sm mt-2">Authenticate to enter the arena</p>
+        </div>
+
+        <div class="terminal-card p-8 rounded-lg">
+            <!-- Prompt line -->
+            <div class="text-matrix text-sm mb-6 opacity-60">
+                <span class="text-green-700">root@hackarena</span><span class="text-gray-600">:</span><span
+                    class="text-blue-500">~</span><span class="text-gray-600">$ </span>
+                <span class="typing-cursor">./login.sh</span>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                {{ form.hidden_tag() }}
+
+                <!-- Email -->
+                <div class="mb-5">
+                    <label class="block text-xs text-gray-500 uppercase tracking-widest mb-2">
+                        {{ form.email.label.text }}
+                    </label>
+                    {{ form.email(class="terminal-input", placeholder="hacker@domain.com", autocomplete="email") }}
+                    {% for err in form.email.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ err }}</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Password -->
+                <div class="mb-6">
+                    <label class="block text-xs text-gray-500 uppercase tracking-widest mb-2">
+                        {{ form.password.label.text }}
+                    </label>
+                    <div class="relative">
+                        {{ form.password(class="terminal-input pr-10", placeholder="••••••••••••", id="password",
+                        autocomplete="current-password") }}
+                        <button type="button" onclick="togglePwd()"
+                            class="absolute right-3 top-2 text-gray-600 hover:text-matrix text-sm">👁</button>
+                    </div>
+                    {% for err in form.password.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ err }}</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Remember -->
+                <div class="flex items-center gap-2 mb-6">
+                    {{ form.remember(class="accent-matrix") }}
+                    <label for="remember" class="text-gray-500 text-sm cursor-pointer">Remember session</label>
+                </div>
+
+                <button type="submit" class="btn-neon w-full py-3 text-sm font-bold tracking-widest uppercase rounded">
+                    [ AUTHENTICATE ]
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-sm text-gray-600">
+                No account?
+                <a href="{{ url_for('auth.register') }}" class="text-neon-cyan hover:text-matrix transition-colors">
+                    Register here
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePwd() {
+        const el = document.getElementById('password');
+        el.type = el.type === 'password' ? 'text' : 'password';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+Flask-Login==0.6.3
+Flask-Bcrypt==1.0.1
+Flask-WTF==1.2.1
+Flask-Limiter==3.7.0
+Flask-Caching==2.3.0
+python-dotenv==1.0.1
+mistune==3.0.2
+Pillow==11.1.0
+gunicorn==22.0.0
+WTForms==3.1.2
+email-validator==2.1.1
+# psycopg2-binary removed for easier local SQLite setup. Add back for PostgreSQL.

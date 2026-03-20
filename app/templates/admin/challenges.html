@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Challenges — Admin CTF{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <a href="{{ url_for('admin.dashboard') }}" class="text-gray-600 hover:text-matrix text-xs transition-colors">←
+            Dashboard</a>
+        <h1 class="text-2xl font-bold text-neon-magenta mt-1">Manage Challenges</h1>
+    </div>
+    <a href="{{ url_for('admin.challenge_new') }}" class="btn-neon px-5 py-2 text-xs rounded">+ New</a>
+</div>
+
+<div class="terminal-card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="ctf-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Diff</th>
+                    <th class="text-right">Pts</th>
+                    <th class="text-right">Solves</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ch in challenges %}
+                <tr>
+                    <td class="font-bold text-gray-200 text-sm">{{ ch.title }}</td>
+                    <td><span class="badge badge-{{ ch.category }}">{{ ch.category }}</span></td>
+                    <td class="diff-{{ ch.difficulty }} text-xs">{{ ch.difficulty }}</td>
+                    <td class="text-right text-neon-yellow font-bold">{{ ch.points }}</td>
+                    <td class="text-right text-gray-500">{{ ch.solve_count }}</td>
+                    <td>
+                        {% if ch.active %}
+                        <span class="text-matrix text-xs">● Active</span>
+                        {% else %}
+                        <span class="text-gray-600 text-xs">○ Hidden</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="{{ url_for('admin.challenge_edit', challenge_id=ch.id) }}"
+                                class="btn-cyan px-3 py-1 text-xs rounded">Edit</a>
+                            <form method="POST" action="{{ url_for('admin.challenge_delete', challenge_id=ch.id) }}"
+                                onsubmit="return confirm('Delete {{ ch.title }}? This is irreversible.')">
+                                {{ csrf_form.hidden_tag() if csrf_form else '' }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-danger px-3 py-1 text-xs rounded">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-gray-600 py-8">No challenges yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

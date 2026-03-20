@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Profile: {{ profile_user.username }} — HackArena CTF{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- LEFT: User card -->
+    <div class="space-y-5">
+        <div class="terminal-card p-6 rounded-lg text-center">
+            <div class="text-5xl mb-3">👾</div>
+            <h1 class="text-xl font-bold text-matrix">{{ profile_user.username }}</h1>
+            <div class="text-gray-600 text-xs mt-1">{{ profile_user.email if current_user.is_admin or current_user.id ==
+                profile_user.id else '***@***' }}</div>
+            {% if profile_user.is_admin %}
+            <span class="badge text-neon-magenta border-neon-magenta mt-2">⚡ ADMIN</span>
+            {% elif profile_user.is_moderator %}
+            <span class="badge text-neon-cyan border-neon-cyan mt-2">🛡 MOD</span>
+            {% endif %}
+
+            <!-- Score -->
+            <div class="mt-5 pt-5 border-t border-green-900">
+                <div class="text-4xl font-bold text-neon-yellow">{{ profile_user.score }}</div>
+                <div class="text-xs text-gray-600 uppercase tracking-widest">Total Score</div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="terminal-card p-5 rounded-lg">
+            <h2 class="text-xs text-neon-cyan uppercase tracking-widest mb-4">// Stats</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Challenges Solved</span>
+                    <span class="text-matrix font-bold">{{ solved_subs | length }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Member Since</span>
+                    <span class="text-gray-400">{{ profile_user.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+                {% if profile_user.first_solve_timestamp %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">First Solve</span>
+                    <span class="text-gray-400">{{ profile_user.first_solve_timestamp.strftime('%Y-%m-%d') }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Category breakdown -->
+        {% if category_stats %}
+        <div class="terminal-card p-5 rounded-lg">
+            <h2 class="text-xs text-neon-cyan uppercase tracking-widest mb-4">// Categories</h2>
+            {% for cat, count in category_stats.items() %}
+            <div class="flex items-center gap-2 mb-2 text-sm">
+                <span class="badge badge-{{ cat }} text-xs">{{ cat }}</span>
+                <span class="text-gray-500 ml-auto">{{ count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT: Activity -->
+    <div class="lg:col-span-2 space-y-5">
+
+        <!-- Solved challenges -->
+        <div class="terminal-card p-5 rounded-lg">
+            <h2 class="text-xs text-neon-cyan uppercase tracking-widest mb-4">// Solved Challenges</h2>
+            {% if solved_subs %}
+            <div class="space-y-2">
+                {% for sub in solved_subs %}
+                {% set ch = solved_map.get(sub.challenge_id) %}
+                {% if ch %}
+                <div class="flex items-center justify-between py-2 border-b border-green-900 border-opacity-20">
+                    <div class="flex items-center gap-3">
+                        <span class="text-matrix text-sm">✓</span>
+                        <a href="{{ url_for('challenges.challenge_detail', slug=ch.slug) }}"
+                            class="text-sm hover:text-matrix transition-colors text-gray-300">
+                            {{ ch.title }}
+                        </a>
+                        <span class="badge badge-{{ ch.category }} text-xs">{{ ch.category }}</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-right">
+                        <span class="text-neon-yellow text-sm font-bold">+{{ ch.points }}</span>
+                        <span class="text-gray-700 text-xs">{{ sub.created_at.strftime('%m/%d') }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-600 text-sm text-center py-4">No solved challenges yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- Recent submissions -->
+        <div class="terminal-card p-5 rounded-lg">
+            <h2 class="text-xs text-neon-cyan uppercase tracking-widest mb-4">// Submission History</h2>
+            <div class="overflow-x-auto">
+                <table class="ctf-table text-sm">
+                    <thead>
+                        <tr>
+                            <th>Challenge</th>
+                            <th>Status</th>
+                            <th class="text-right">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in recent_subs %}
+                        <tr>
+                            <td>
+                                {% set ch = solved_map.get(sub.challenge_id) %}
+                                {% if ch %}
+                                <a href="{{ url_for('challenges.challenge_detail', slug=ch.slug) }}"
+                                    class="hover:text-matrix transition-colors">{{ ch.title }}</a>
+                                {% else %}
+                                <span class="text-gray-600">#{{ sub.challenge_id }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.is_correct %}
+                                <span class="text-matrix text-xs">✅ Correct (+{{ sub.points_earned }}pts)</span>
+                                {% else %}
+                                <span class="text-red-500 text-xs">❌ Wrong</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right text-gray-700 text-xs whitespace-nowrap">
+                                {{ sub.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center text-gray-600 py-4">No submissions yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

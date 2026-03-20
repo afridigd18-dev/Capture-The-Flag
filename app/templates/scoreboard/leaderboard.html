@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — HackArena CTF{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex items-end justify-between">
+    <div>
+        <h1 class="text-4xl font-bold text-matrix glitch" data-text="LEADERBOARD">LEADERBOARD</h1>
+        <p class="text-gray-600 text-sm mt-1">
+            Live rankings · refreshes every <span id="countdown" class="text-neon-cyan">30</span>s
+        </p>
+    </div>
+    <div class="text-xs text-gray-700">
+        <span id="last-update"></span>
+    </div>
+</div>
+
+<div class="terminal-card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="ctf-table" id="scoreboard-table">
+            <thead>
+                <tr>
+                    <th class="w-16">Rank</th>
+                    <th>Player</th>
+                    <th class="text-right">Score</th>
+                    <th class="text-right hidden sm:table-cell">Solves</th>
+                    <th class="text-right hidden md:table-cell">First Solve</th>
+                </tr>
+            </thead>
+            <tbody id="scoreboard-body">
+                {% for entry in board %}
+                <tr class="transition-colors
+          {% if entry.username == current_user.username %}bg-matrix bg-opacity-5 border-l-2 border-matrix{% endif %}">
+                    <td class="font-bold
+            {% if entry.rank == 1 %}rank-1 text-lg
+            {% elif entry.rank == 2 %}rank-2
+            {% elif entry.rank == 3 %}rank-3
+            {% else %}text-gray-600{% endif %}">
+                        {% if entry.rank == 1 %}🥇
+                        {% elif entry.rank == 2 %}🥈
+                        {% elif entry.rank == 3 %}🥉
+                        {% else %}#{{ entry.rank }}{% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('profile.view_profile', username=entry.username) }}"
+                            class="hover:text-matrix transition-colors text-neon-cyan text-sm font-bold">
+                            {{ entry.username }}
+                        </a>
+                        {% if entry.username == current_user.username %}
+                        <span class="text-xs text-gray-600 ml-2">← you</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right text-neon-yellow font-bold">{{ entry.score }}</td>
+                    <td class="text-right hidden sm:table-cell text-gray-500 text-sm">{{ entry.solve_count }}</td>
+                    <td class="text-right hidden md:table-cell text-gray-700 text-xs">
+                        {{ entry.first_solve | default('—') }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-gray-600 py-10">No scores yet — go solve challenges!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/scoreboard.js') }}"></script>
+{% endblock %}

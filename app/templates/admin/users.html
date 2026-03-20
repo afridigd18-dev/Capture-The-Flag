@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Users — Admin CTF{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center gap-4">
+    <a href="{{ url_for('admin.dashboard') }}" class="text-gray-600 hover:text-matrix text-xs transition-colors">←
+        Dashboard</a>
+    <h1 class="text-2xl font-bold text-neon-magenta">Manage Users</h1>
+</div>
+
+<div class="terminal-card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="ctf-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th class="text-right">Score</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="{% if user.id == current_user.id %}bg-matrix bg-opacity-5{% endif %}">
+                    <td class="text-gray-600 text-xs">{{ user.id }}</td>
+                    <td>
+                        <a href="{{ url_for('profile.view_profile', username=user.username) }}"
+                            class="text-neon-cyan hover:text-matrix transition-colors font-bold text-sm">
+                            {{ user.username }}
+                        </a>
+                        {% if user.id == current_user.id %}<span class="text-xs text-gray-600 ml-1">(you)</span>{% endif
+                        %}
+                    </td>
+                    <td class="text-gray-500 text-xs">{{ user.email }}</td>
+                    <td>
+                        {% if user.role == 'admin' %}
+                        <span class="badge text-neon-magenta border-neon-magenta">admin</span>
+                        {% elif user.role == 'moderator' %}
+                        <span class="badge text-neon-cyan border-neon-cyan">mod</span>
+                        {% else %}
+                        <span class="text-gray-600 text-xs">user</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right text-neon-yellow font-bold">{{ user.score }}</td>
+                    <td>
+                        {% if user.banned %}
+                        <span class="text-red-400 text-xs">🚫 Banned</span>
+                        {% else %}
+                        <span class="text-matrix text-xs">● Active</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-gray-700 text-xs">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td class="text-right">
+                        {% if user.id != current_user.id %}
+                        <div class="flex items-center justify-end gap-2">
+                            {% if user.role != 'admin' %}
+                            <form method="POST" action="{{ url_for('admin.promote_user', user_id=user.id) }}"
+                                onsubmit="return confirm('Promote {{ user.username }} to Admin?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-neon px-3 py-1 text-xs rounded">Promote</button>
+                            </form>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('admin.ban_user', user_id=user.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit"
+                                    class="{% if user.banned %}btn-cyan{% else %}btn-danger{% endif %} px-3 py-1 text-xs rounded">
+                                    {{ 'Unban' if user.banned else 'Ban' }}
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-gray-600 py-8">No users.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

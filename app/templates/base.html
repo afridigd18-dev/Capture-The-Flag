@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}HackArena CTF{% endblock %}</title>
+  <meta name="description" content="HackArena — Train. Exploit. Conquer. A premier Capture The Flag practice platform." />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'matrix': '#00ff41',
+            'neon-cyan': '#00f5ff',
+            'neon-magenta': '#ff00ff',
+            'neon-yellow': '#ffff00',
+            'terminal': '#0d0d0d',
+            'card': '#111111',
+            'border-neon': '#1a1a1a',
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'Consolas', 'monospace'],
+          },
+          animation: {
+            'blink': 'blink 1s step-end infinite',
+            'glitch': 'glitch 0.3s ease-in-out infinite alternate',
+            'pulse-neon': 'pulse-neon 2s ease-in-out infinite',
+            'fade-in': 'fadeIn 0.5s ease-out',
+            'slide-down': 'slideDown 0.4s ease-out',
+          },
+          keyframes: {
+            blink: { '0%,100%': { opacity: '1' }, '50%': { opacity: '0' } },
+            'pulse-neon': {
+              '0%,100%': { boxShadow: '0 0 5px #00ff41, 0 0 10px #00ff41' },
+              '50%': { boxShadow: '0 0 20px #00ff41, 0 0 40px #00ff41' }
+            },
+            fadeIn: { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+            slideDown: { from: { transform: 'translateY(-100%)' }, to: { transform: 'translateY(0)' } },
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Custom hacker CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/hacker.css') }}" />
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-terminal text-matrix font-mono min-h-screen flex flex-col">
+
+  <!-- Matrix Rain Canvas -->
+  <canvas id="matrix-canvas" class="fixed inset-0 w-full h-full opacity-5 pointer-events-none z-0"></canvas>
+
+  <!-- Navbar -->
+  <nav class="relative z-50 border-b border-green-900 bg-black bg-opacity-90 backdrop-blur-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="{{ url_for('challenges.list_challenges') }}" class="flex items-center gap-2 group">
+        <span class="text-xl font-bold text-matrix group-hover:text-neon-cyan transition-colors duration-200">
+          ⚡ HackArena<span class="animate-blink">_</span>
+        </span>
+      </a>
+
+      <!-- Desktop nav -->
+      <div class="hidden md:flex items-center gap-6 text-sm">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('challenges.list_challenges') }}"
+             class="nav-link {% if request.endpoint and 'challenge' in request.endpoint %}text-matrix{% else %}text-gray-400{% endif %} hover:text-matrix transition-colors">
+            [challenges]
+          </a>
+          <a href="{{ url_for('scoreboard.leaderboard') }}"
+             class="nav-link {% if request.endpoint and 'scoreboard' in request.endpoint %}text-matrix{% else %}text-gray-400{% endif %} hover:text-matrix transition-colors">
+            [scoreboard]
+          </a>
+          <a href="{{ url_for('profile.view_profile', username=current_user.username) }}"
+             class="nav-link {% if request.endpoint and 'profile' in request.endpoint %}text-matrix{% else %}text-gray-400{% endif %} hover:text-matrix transition-colors">
+            [{{ current_user.username }}]
+          </a>
+          {% if current_user.is_admin %}
+          <a href="{{ url_for('admin.dashboard') }}"
+             class="nav-link text-neon-magenta hover:text-pink-300 transition-colors">
+            [admin]
+          </a>
+          {% endif %}
+          <a href="{{ url_for('auth.logout') }}" class="text-gray-500 hover:text-red-400 transition-colors">[logout]</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="text-gray-400 hover:text-matrix transition-colors">[login]</a>
+          <a href="{{ url_for('auth.register') }}" class="btn-neon px-4 py-1 text-xs rounded">[register]</a>
+        {% endif %}
+      </div>
+
+      <!-- Score badge (desktop) -->
+      {% if current_user.is_authenticated %}
+      <div class="hidden md:flex items-center gap-1 text-neon-yellow text-sm font-bold">
+        <span>◆</span>
+        <span id="nav-score">{{ current_user.score }}</span>
+        <span class="text-xs text-gray-500">pts</span>
+      </div>
+      {% endif %}
+
+      <!-- Mobile menu toggle -->
+      <button id="mobile-menu-btn" class="md:hidden text-matrix p-2 rounded">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden px-4 pb-4 bg-black border-t border-green-900">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('challenges.list_challenges') }}" class="block py-2 text-gray-400 hover:text-matrix">[challenges]</a>
+        <a href="{{ url_for('scoreboard.leaderboard') }}" class="block py-2 text-gray-400 hover:text-matrix">[scoreboard]</a>
+        <a href="{{ url_for('profile.view_profile', username=current_user.username) }}" class="block py-2 text-gray-400 hover:text-matrix">[profile]</a>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin.dashboard') }}" class="block py-2 text-neon-magenta">[admin]</a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="block py-2 text-red-400">[logout]</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="block py-2 text-gray-400 hover:text-matrix">[login]</a>
+        <a href="{{ url_for('auth.register') }}" class="block py-2 text-matrix">[register]</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="relative z-40 max-w-7xl mx-auto w-full px-4 pt-4">
+    {% for category, message in messages %}
+    <div class="flash-msg flex items-center gap-3 px-4 py-3 mb-2 rounded border text-sm animate-slide-down
+      {% if category == 'success' %}bg-green-950 border-matrix text-matrix
+      {% elif category == 'danger' %}bg-red-950 border-red-500 text-red-400
+      {% elif category == 'warning' %}bg-yellow-950 border-yellow-500 text-yellow-400
+      {% elif category == 'info' %}bg-cyan-950 border-neon-cyan text-neon-cyan
+      {% else %}bg-gray-900 border-gray-700 text-gray-300{% endif %}">
+      <span>
+        {% if category == 'success' %}✅
+        {% elif category == 'danger' %}❌
+        {% elif category == 'warning' %}⚠️
+        {% else %}ℹ️{% endif %}
+      </span>
+      <span>{{ message }}</span>
+      <button class="ml-auto opacity-60 hover:opacity-100" onclick="this.parentElement.remove()">✕</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Main content -->
+  <main class="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 animate-fade-in">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 border-t border-green-900 bg-black bg-opacity-80 text-center py-4 text-xs text-green-900">
+    <span>HackArena CTF &nbsp;|&nbsp; Train. Exploit. Conquer.</span>
+    &nbsp;|&nbsp;
+    <span class="text-gray-700">root@hackarena:~$<span class="animate-blink">_</span></span>
+  </footer>
+
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='js/matrix.js') }}"></script>
+  <script>
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+    // Auto-dismiss flash messages after 5s
+    setTimeout(() => {
+      document.querySelectorAll('.flash-msg').forEach(el => el.remove());
+    }, 5000);
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Register — HackArena CTF{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center">
+    <div class="w-full max-w-md">
+
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-matrix glitch" data-text="CREATE ACCOUNT">CREATE ACCOUNT</h1>
+            <p class="text-gray-600 text-sm mt-2">Join the arena — no mercy for the weak</p>
+        </div>
+
+        <div class="terminal-card p-8 rounded-lg">
+            <div class="text-sm mb-6 opacity-60">
+                <span class="text-green-700">root@hackarena</span><span class="text-gray-600">:</span>
+                <span class="text-blue-500">~</span><span class="text-gray-600">$ </span>
+                <span class="typing-cursor">./register.sh</span>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+                {{ form.hidden_tag() }}
+
+                <!-- Username -->
+                <div class="mb-5">
+                    <label class="block text-xs text-gray-500 uppercase tracking-widest mb-2">{{
+                        form.username.label.text }}</label>
+                    {{ form.username(class="terminal-input", placeholder="h4cker_alias", autocomplete="username") }}
+                    {% for err in form.username.errors %}<p class="text-red-400 text-xs mt-1">{{ err }}</p>{% endfor %}
+                </div>
+
+                <!-- Email -->
+                <div class="mb-5">
+                    <label class="block text-xs text-gray-500 uppercase tracking-widest mb-2">{{ form.email.label.text
+                        }}</label>
+                    {{ form.email(class="terminal-input", placeholder="you@domain.com", autocomplete="email") }}
+                    {% for err in form.email.errors %}<p class="text-red-400 text-xs mt-1">{{ err }}</p>{% endfor %}
+                </div>
+
+                <!-- Password -->
+                <div class="mb-4">
+                    <label class="block text-xs text-gray-500 uppercase tracking-widest mb-2">{{
+                        form.password.label.text }}</label>
+                    <div class="relative">
+                        {{ form.password(class="terminal-input pr-10", placeholder="Min 12 chars", id="pwd",
+                        autocomplete="new-password",
+                        oninput="checkStrength(this.value)") }}
+                        <button type="button" onclick="togglePwd('pwd')"
+                            class="absolute right-3 top-2 text-gray-600 hover:text-matrix text-sm">👁</button>
+                    </div>
+                    <!-- Strength meter -->
+                    <div class="progress-bar mt-2">
+                        <div id="strength-bar" class="progress-fill" style="width:0%"></div>
+                    </div>
+                    <p id="strength-text" class="text-xs mt-1 text-gray-600"></p>
+                    {% for err in form.password.errors %}<p class="text-red-400 text-xs mt-1">{{ err }}</p>{% endfor %}
+                </div>
+
+                <!-- Confirm password -->
+                <div class="mb-6">
+                    <label class="block text-xs text-gray-500 uppercase tracking-widest mb-2">{{
+                        form.confirm_password.label.text }}</label>
+                    <div class="relative">
+                        {{ form.confirm_password(class="terminal-input pr-10", placeholder="Repeat password", id="cpwd",
+                        autocomplete="new-password") }}
+                        <button type="button" onclick="togglePwd('cpwd')"
+                            class="absolute right-3 top-2 text-gray-600 hover:text-matrix text-sm">👁</button>
+                    </div>
+                    {% for err in form.confirm_password.errors %}<p class="text-red-400 text-xs mt-1">{{ err }}</p>{%
+                    endfor %}
+                </div>
+
+                <!-- Policy hint -->
+                <p class="text-gray-700 text-xs mb-5">
+                    Password must be ≥12 chars with uppercase, lowercase, digit &amp; special character.
+                </p>
+
+                <button type="submit" class="btn-neon w-full py-3 text-sm font-bold tracking-widest uppercase rounded">
+                    [ CREATE ACCOUNT ]
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-sm text-gray-600">
+                Already registered?
+                <a href="{{ url_for('auth.login') }}"
+                    class="text-neon-cyan hover:text-matrix transition-colors">Login</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePwd(id) {
+        const el = document.getElementById(id);
+        el.type = el.type === 'password' ? 'text' : 'password';
+    }
+
+    function checkStrength(pwd) {
+        let score = 0;
+        if (pwd.length >= 12) score++;
+        if (/[A-Z]/.test(pwd)) score++;
+        if (/[a-z]/.test(pwd)) score++;
+        if (/\d/.test(pwd)) score++;
+        if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+        const bar = document.getElementById('strength-bar');
+        const txt = document.getElementById('strength-text');
+        const levels = [
+            { w: '0%', c: '#ff4444', t: '' },
+            { w: '20%', c: '#ff4444', t: 'Weak' },
+            { w: '40%', c: '#ff8c00', t: 'Fair' },
+            { w: '60%', c: '#ffff00', t: 'Moderate' },
+            { w: '80%', c: '#00f5ff', t: 'Strong' },
+            { w: '100%', c: '#00ff41', t: '💪 Excellent' },
+        ];
+        bar.style.width = levels[score].w;
+        bar.style.background = levels[score].c;
+        txt.textContent = levels[score].t;
+        txt.style.color = levels[score].c;
+    }
+</script>
+{% endblock %}

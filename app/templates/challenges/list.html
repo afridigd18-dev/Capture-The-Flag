@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Challenges — HackArena CTF{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-8">
+    <h1 class="text-4xl font-bold text-matrix glitch" data-text="CHALLENGES">CHALLENGES</h1>
+    <p class="text-gray-600 text-sm mt-1">
+        Select your target. Total:
+        <span class="text-neon-yellow font-bold">
+            {{ categories.values() | map('length') | sum }}
+        </span> challenges
+    </p>
+</div>
+
+<!-- Stats bar -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+    {% set total = categories.values() | map('length') | sum %}
+    {% set solved = solved_ids | length %}
+    <div class="terminal-card p-4 text-center">
+        <div class="text-2xl font-bold text-neon-yellow">{{ solved }}</div>
+        <div class="text-xs text-gray-600 uppercase tracking-widest">Solved</div>
+    </div>
+    <div class="terminal-card p-4 text-center">
+        <div class="text-2xl font-bold text-matrix">{{ total - solved }}</div>
+        <div class="text-xs text-gray-600 uppercase tracking-widest">Remaining</div>
+    </div>
+    <div class="terminal-card p-4 text-center">
+        <div class="text-2xl font-bold text-neon-cyan">{{ categories | length }}</div>
+        <div class="text-xs text-gray-600 uppercase tracking-widest">Categories</div>
+    </div>
+    <div class="terminal-card p-4 text-center">
+        <div class="text-2xl font-bold text-neon-magenta">{{ current_user.score }}</div>
+        <div class="text-xs text-gray-600 uppercase tracking-widest">Your Score</div>
+    </div>
+</div>
+
+<!-- Challenges by category -->
+{% if categories %}
+{% for category, challenges in categories.items() %}
+<div class="mb-10">
+    <!-- Category header -->
+    <div class="flex items-center gap-3 mb-4">
+        <span class="badge badge-{{ category }} text-sm px-3 py-1">
+            {{ challenges[0].category_icon }} {{ category | upper }}
+        </span>
+        <div class="flex-1 h-px bg-green-900 opacity-30"></div>
+        <span class="text-xs text-gray-600">{{ challenges | length }} challenges</span>
+    </div>
+
+    <!-- Challenge cards grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% for ch in challenges %}
+        {% set is_solved = ch.id in solved_ids %}
+        <a href="{{ url_for('challenges.challenge_detail', slug=ch.slug) }}"
+            class="terminal-card relative p-5 rounded-lg block {% if is_solved %}opacity-70{% endif %} hover:no-underline">
+
+            {% if is_solved %}
+            <div class="solved-badge">✓ SOLVED</div>
+            {% endif %}
+
+            <!-- Title -->
+            <h3 class="font-bold text-matrix text-sm mb-2 line-clamp-2 pr-16">{{ ch.title }}</h3>
+
+            <!-- Points -->
+            <div class="text-neon-yellow text-2xl font-bold mb-3">{{ ch.points }}<span
+                    class="text-xs text-gray-600">pts</span></div>
+
+            <!-- Footer badges -->
+            <div class="flex items-center justify-between mt-auto">
+                <span class="text-xs diff-{{ ch.difficulty }}">{{ ch.difficulty | upper }}</span>
+                <span class="text-xs text-gray-600">
+                    {{ ch.solve_count }} solve{{ 's' if ch.solve_count != 1 }}
+                </span>
+            </div>
+
+            {% if ch.has_file() %}
+            <div class="mt-2 text-xs text-gray-700">📎 file attached</div>
+            {% endif %}
+
+            {% if ch.hints.count() > 0 %}
+            <div class="mt-1 text-xs text-gray-700">💡 hint available</div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="terminal-card p-12 text-center">
+    <div class="text-4xl mb-4">🔒</div>
+    <p class="text-gray-500">No challenges available yet.</p>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('admin.challenge_new') }}" class="btn-neon px-6 py-2 mt-4 inline-block rounded text-sm">
+        + Add First Challenge
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

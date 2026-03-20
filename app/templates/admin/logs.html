@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs — Admin CTF{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center gap-4">
+    <a href="{{ url_for('admin.dashboard') }}" class="text-gray-600 hover:text-matrix text-xs">← Dashboard</a>
+    <h1 class="text-2xl font-bold text-neon-magenta">Audit Logs</h1>
+</div>
+
+<div class="terminal-card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="ctf-table text-xs">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>User</th>
+                    <th>Target</th>
+                    <th>IP</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td class="text-gray-700 whitespace-nowrap">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td
+                        class="{% if 'correct' in log.action %}text-matrix{% elif 'fail' in log.action or 'wrong' in log.action %}text-red-400{% elif 'ban' in log.action %}text-neon-magenta{% elif 'admin' in log.action or 'promote' in log.action %}text-yellow-400{% else %}text-gray-400{% endif %}">
+                        {{ log.action }}
+                    </td>
+                    <td>
+                        {% if log.user %}
+                        <a href="{{ url_for('profile.view_profile', username=log.user.username) }}"
+                            class="text-neon-cyan hover:text-matrix">{{ log.user.username }}</a>
+                        {% else %}<span class="text-gray-600">anon</span>{% endif %}
+                    </td>
+                    <td class="text-gray-600">{{ log.target_type or '' }} {{ '#'+log.target_id|string if log.target_id
+                        }}</td>
+                    <td class="text-gray-700">{{ log.ip_address or '—' }}</td>
+                    <td class="text-gray-700 max-w-xs truncate" title="{{ log.details or '' }}">{{ log.details or '—' }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-gray-600 py-8">No logs yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if logs.pages > 1 %}
+    <div class="flex gap-2 justify-center py-4 border-t border-green-900 border-opacity-20">
+        {% if logs.has_prev %}
+        <a href="{{ url_for('admin.audit_logs', page=logs.prev_num) }}" class="btn-neon px-3 py-1 text-xs rounded">←
+            Prev</a>
+        {% endif %}
+        <span class="text-gray-600 text-xs self-center">Page {{ logs.page }} / {{ logs.pages }}</span>
+        {% if logs.has_next %}
+        <a href="{{ url_for('admin.audit_logs', page=logs.next_num) }}" class="btn-neon px-3 py-1 text-xs rounded">Next
+            →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

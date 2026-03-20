@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}403 Forbidden{% endblock %}
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center text-center">
+    <div>
+        <div class="text-8xl font-black text-neon-magenta glitch mb-4" data-text="403">403</div>
+        <h1 class="text-2xl font-bold text-gray-300 mb-2">Access Forbidden</h1>
+        <p class="text-gray-600 mb-6">You do not have permission to access this sector.</p>
+        <a href="{{ url_for('challenges.list_challenges') }}" class="btn-neon px-6 py-2 rounded text-sm">← Return to
+            Base</a>
+    </div>
+</div>
+{% endblock %}

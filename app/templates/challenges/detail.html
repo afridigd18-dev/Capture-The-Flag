@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}{{ challenge.title }} — HackArena CTF{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="text-xs text-gray-600 mb-6">
+    <a href="{{ url_for('challenges.list_challenges') }}" class="hover:text-matrix transition-colors">[challenges]</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-400">{{ challenge.title }}</span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- LEFT: Challenge content -->
+    <div class="lg:col-span-2 space-y-5">
+
+        <!-- Title card -->
+        <div class="terminal-card p-6 rounded-lg">
+            <div class="flex flex-wrap items-start gap-3 mb-4">
+                <span class="badge badge-{{ challenge.category }}">
+                    {{ challenge.category_icon }} {{ challenge.category | upper }}
+                </span>
+                <span class="badge diff-{{ challenge.difficulty }} border-current" style="border-width:1px">
+                    {{ challenge.difficulty | upper }}
+                </span>
+                {% if already_solved %}
+                <span class="badge text-matrix border-matrix" style="border-width:1px">✓ SOLVED</span>
+                {% endif %}
+            </div>
+
+            <h1 class="text-2xl font-bold text-matrix mb-2 glitch" data-text="{{ challenge.title }}">
+                {{ challenge.title }}
+            </h1>
+            <div class="text-neon-yellow text-3xl font-bold mb-1">
+                {{ challenge.points }}<span class="text-sm text-gray-500">pts</span>
+            </div>
+            <div class="text-xs text-gray-600">
+                {{ challenge.solve_count }} players solved &nbsp;|&nbsp;
+                Author: {{ challenge.author.username if challenge.author else 'admin' }}
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="terminal-card p-6 rounded-lg">
+            <h2 class="text-xs text-neon-cyan uppercase tracking-widest mb-4">// Description</h2>
+            <div class="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed challenge-md">
+                {{ render_markdown(challenge.description) | safe }}
+            </div>
+        </div>
+
+        <!-- File download -->
+        {% if challenge.has_file() %}
+        <div class="terminal-card p-5 rounded-lg flex items-center justify-between">
+            <div>
+                <div class="text-neon-cyan text-sm font-bold">📎 Challenge File</div>
+                <div class="text-gray-600 text-xs mt-1">{{ challenge.file_name or 'Download' }}</div>
+            </div>
+            <a href="{{ url_for('static', filename=challenge.file_path) }}" download="{{ challenge.file_name }}"
+                class="btn-cyan px-4 py-2 text-xs rounded">
+                ↓ DOWNLOAD
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Hints section -->
+        {% if challenge.hints.count() > 0 %}
+        <div class="terminal-card p-5 rounded-lg">
+            <h2 class="text-xs text-neon-cyan uppercase tracking-widest mb-4">// Hints</h2>
+            {% for hint in challenge.hints %}
+            <div class="mb-4 p-4 bg-black rounded border border-yellow-900">
+                {% if hint.id in unlocked_hint_ids %}
+                <!-- Show unlocked hint -->
+                <div class="text-yellow-400 text-sm">
+                    💡 {{ render_markdown(hint.text) | safe }}
+                </div>
+                {% else %}
+                <!-- Locked hint -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">🔒 Hint locked</p>
+                        <p class="text-xs text-gray-700 mt-1">Costs <span class="text-neon-yellow">{{
+                                hint.penalty_points }}</span> points to unlock</p>
+                    </div>
+                    {% if not already_solved %}
+                    <form method="POST"
+                        action="{{ url_for('challenges.unlock_hint', slug=challenge.slug, hint_id=hint.id) }}">
+                        {{ hint_form.hidden_tag() }}
+                        <button type="submit" onclick="return confirm('Unlock hint for -{{ hint.penalty_points }}pts?')"
+                            class="btn-neon text-xs px-3 py-1 rounded">
+                            UNLOCK (-{{ hint.penalty_points }}pts)
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- RIGHT: Flag submission -->
+    <div class="space-y-5">
+
+        <div class="terminal-card p-6 rounded-lg sticky top-6">
+            <h2 class="text-xs text-neon-cyan uppercase tracking-widest mb-4">// Submit Flag</h2>
+
+            {% if already_solved %}
+            <div class="text-center py-6">
+                <div class="text-4xl mb-2">🏆</div>
+                <div class="text-matrix font-bold">PWNED!</div>
+                <div class="text-gray-500 text-xs mt-1">You already solved this. GG!</div>
+            </div>
+            {% else %}
+            <form method="POST" action="{{ url_for('challenges.submit_flag', slug=challenge.slug) }}" id="flag-form">
+                {{ form.hidden_tag() }}
+                <div class="mb-4">
+                    <label class="block text-xs text-gray-500 uppercase tracking-widest mb-2">Flag</label>
+                    {{ form.flag(class="terminal-input", placeholder="flag{...}", id="flag-input",
+                    autocomplete="off", spellcheck="false") }}
+                </div>
+                <button type="submit" id="submit-btn"
+                    class="btn-neon w-full py-3 text-sm font-bold tracking-widest uppercase rounded">
+                    [ SUBMIT FLAG ]
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Quick stats -->
+            <div class="mt-5 pt-5 border-t border-green-900 grid grid-cols-2 gap-2 text-center text-xs">
+                <div>
+                    <div class="text-neon-yellow font-bold">{{ challenge.points }}</div>
+                    <div class="text-gray-700">Points</div>
+                </div>
+                <div>
+                    <div class="text-neon-cyan font-bold">{{ challenge.solve_count }}</div>
+                    <div class="text-gray-700">Solves</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Submit loading state
+    document.getElementById('flag-form')?.addEventListener('submit', function () {
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Verifying...';
+        btn.classList.remove('btn-neon');
+        btn.classList.add('opacity-60', 'cursor-not-allowed');
+    });
+</script>
+<style>
+    .challenge-md h1,
+    h2,
+    h3 {
+        color: #00f5ff;
+        margin-top: 1em;
+        margin-bottom: 0.5em;
+    }
+
+    .challenge-md code {
+        background: #0a1a0a;
+        color: #00ff41;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.85em;
+    }
+
+    .challenge-md pre {
+        background: #0a1a0a;
+        border: 1px solid #1a2a1a;
+        border-radius: 6px;
+        padding: 1em;
+        overflow-x: auto;
+    }
+
+    .challenge-md a {
+        color: #00f5ff;
+    }
+
+    .challenge-md strong {
+        color: #ffff00;
+    }
+</style>
+{% endblock %}
